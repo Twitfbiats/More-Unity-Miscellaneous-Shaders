@@ -6,6 +6,10 @@ public class TestScript2 : MonoBehaviour
 {
 
     public Material explosionMat;
+    public Material defaultMat;
+    public Material goUpMat;
+    public bool dedfaultMatBool = false;
+    public bool goUpMatBool = false;
 
     private bool isClicked;
 
@@ -16,9 +20,15 @@ public class TestScript2 : MonoBehaviour
 	
 	// Update is called once per frame
 	void Update () {
-        if(this.isClicked || this.explosionMat == null)
+        //check if we click the right mouse 
+        if (Input.GetMouseButton(1))
         {
-            return;
+            MeshRenderer[] renderers = GetComponentsInChildren<MeshRenderer>();
+
+            for(int i = 0; i< renderers.Length; i++)
+            {
+                renderers[i].material = this.defaultMat;
+            }
         }
 
         if (Input.GetMouseButton(0))
@@ -28,14 +38,22 @@ public class TestScript2 : MonoBehaviour
             if (Physics.Raycast(ray, out hit))
             {
                 MeshRenderer[] renderers = hit.collider.GetComponentsInChildren<MeshRenderer>();
-                this.explosionMat.SetFloat("_StartTime", Time.timeSinceLevelLoad);
-
-                for(int i = 0; i< renderers.Length; i++)
+                if (goUpMatBool)
                 {
-                    renderers[i].material = this.explosionMat;
+                    this.goUpMat.SetFloat("_StartTime", Time.timeSinceLevelLoad);
+                    for(int i = 0; i< renderers.Length; i++)
+                    {
+                        renderers[i].material = this.goUpMat;
+                    }
                 }
-
-                this.isClicked = true;
+                else 
+                {
+                    this.explosionMat.SetFloat("_StartTime", Time.timeSinceLevelLoad);
+                    for(int i = 0; i< renderers.Length; i++)
+                    {
+                        renderers[i].material = this.explosionMat;
+                    }
+                }
             }
         }
     }
