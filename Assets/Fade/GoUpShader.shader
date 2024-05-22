@@ -3,10 +3,10 @@ Shader "Vip/GeometryShaderWithDisappear"
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
-		_Speed("Speed", Float) = 10
-		_AccelerationValue("AccelerationValue", Float) = 10
-        _HeightTimeDisapear("HeightTimeDisapear", Float) = 3
+		_Speed("Speed", Float) = 5
+        _DelayTimeByHeight("DelayTimeByHeight", Float) = 2
 		_GeoRelativePosPortion("GeoRelativePosPortion", Float) = 0.2
+		_TimeMultiplier("TimeMultiplier", Float) = 1
 	}
 	SubShader
 	{
@@ -52,11 +52,11 @@ Shader "Vip/GeometryShaderWithDisappear"
 			sampler2D _MainTex;
 
 			float _Speed;
-			float _AccelerationValue;
 			float _StartTime;
-            float _HeightTimeDisapear;
+            float _DelayTimeByHeight;
 			float _GeoRelativePosPortion;
-			
+			float _TimeMultiplier;
+
 			v2g vert (appdata v)
 			{
 				v2g o;
@@ -71,16 +71,16 @@ Shader "Vip/GeometryShaderWithDisappear"
 			[maxvertexcount(3)]
 			void geom(triangle v2g IN[3], inout TriangleStream<g2f> triangleStream)
 			{
-                float realTime = _Time.y - _StartTime;
+                float realTime = (_Time.y - _StartTime) * _TimeMultiplier;
 				g2f o;
 				float3 tempPos = (IN[0].vertex + IN[1].vertex + IN[2].vertex) / 3;
-				float3 dir1 = IN[0].vertex - tempPos;
-				float3 dir2 = IN[1].vertex - tempPos;
-				float3 dir3 = IN[2].vertex - tempPos;
 
-				if (tempPos.y + realTime > _HeightTimeDisapear)
+				if (tempPos.y + realTime > _DelayTimeByHeight)
                 {
-                    tempPos = float3(tempPos.x, tempPos.y + (realTime - _HeightTimeDisapear + tempPos.y) * step(_HeightTimeDisapear, tempPos.y + realTime), tempPos.z);
+					float3 dir1 = IN[0].vertex - tempPos;
+					float3 dir2 = IN[1].vertex - tempPos;
+					float3 dir3 = IN[2].vertex - tempPos;
+                    tempPos = float3(tempPos.x, tempPos.y + (realTime - _DelayTimeByHeight + tempPos.y) * _Speed * step(_DelayTimeByHeight, tempPos.y + realTime), tempPos.z);
 
                     o.uv = (IN[0].uv + IN[1].uv + IN[2].uv) / 3;
 					o.normal = (IN[0].normal + IN[1].normal + IN[2].normal) / 3;

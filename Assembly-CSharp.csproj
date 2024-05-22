@@ -66,13 +66,14 @@
   <ItemGroup>
     <Compile Include="Assets\GlassDragon\Rotation.cs" />
     <Compile Include="Assets\ExplosionAnSandEffect\Script\TestScript2.cs" />
+    <Compile Include="Assets\Fade\Click.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Stanford-Bunny-Fur-With-Unity\Shader\BunnyFurShader.shader" />
     <None Include="Assets\ExplosionAnSandEffect\Shader\ExplosionAnSandEffectShader.shader" />
     <None Include="Assets\SnowTrack\Shader\SnowTrackShader.shader" />
     <None Include="Assets\GlassDragon\Shader\GlassDragon.shader" />
-    <None Include="Assets\ExplosionAnSandEffect\Shader\GoUpShader.shader" />
+    <None Include="Assets\Fade\GoUpShader.shader" />
     <None Include="Assets\Outline\OutlineShader.shader" />
   </ItemGroup>
   <ItemGroup>

@@ -4,14 +4,8 @@ using UnityEngine;
 
 public class TestScript2 : MonoBehaviour
 {
-
     public Material explosionMat;
     public Material defaultMat;
-    public Material goUpMat;
-    public bool dedfaultMatBool = false;
-    public bool goUpMatBool = false;
-
-    private bool isClicked;
 
 	// Use this for initialization
 	void Start () {
@@ -38,21 +32,10 @@ public class TestScript2 : MonoBehaviour
             if (Physics.Raycast(ray, out hit))
             {
                 MeshRenderer[] renderers = hit.collider.GetComponentsInChildren<MeshRenderer>();
-                if (goUpMatBool)
+                this.explosionMat.SetFloat("_StartTime", Time.timeSinceLevelLoad);
+                for(int i = 0; i< renderers.Length; i++)
                 {
-                    this.goUpMat.SetFloat("_StartTime", Time.timeSinceLevelLoad);
-                    for(int i = 0; i< renderers.Length; i++)
-                    {
-                        renderers[i].material = this.goUpMat;
-                    }
-                }
-                else 
-                {
-                    this.explosionMat.SetFloat("_StartTime", Time.timeSinceLevelLoad);
-                    for(int i = 0; i< renderers.Length; i++)
-                    {
-                        renderers[i].material = this.explosionMat;
-                    }
+                    renderers[i].material = this.explosionMat;
                 }
             }
         }
