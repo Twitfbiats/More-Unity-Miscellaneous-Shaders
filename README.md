@@ -27,6 +27,13 @@ run and click the model
 
 ![](gif/fade.gif)
 
+## Update 2024/30/05：Fire
+#### Description:
+
+Customable fire shader
+
+![](gif/fire.webp)
+
 ## Update 2017/11/23: Update a demo of Stanford rabbit generating fur
 #### Description:
 Using the Geometry Shader to generate fur on GPU.
