@@ -30,7 +30,7 @@ run and click the model
 ## Update 2024/30/05：Fire
 #### Description:
 
-Customable fire shader
+Customizable fire shader
 
 ![](gif/fire.webp)
 
