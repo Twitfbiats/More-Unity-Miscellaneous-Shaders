@@ -51,5 +51,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "More-Unity-Miscellaneous-Shaders.sln"
+    "dotnet.defaultSolution": "More-Unity-Miscellaneous-Shaders.sln",
+    "vstuc.refreshOnSave": true
 }
