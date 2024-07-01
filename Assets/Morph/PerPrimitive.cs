@@ -12,6 +12,7 @@ class PerPrimitive : MonoBehaviour
     {
         material = GetComponent<Renderer>().material;
         meshFilter = GetComponent<MeshFilter>();
+        
         AddTriangleData();
     }
 
