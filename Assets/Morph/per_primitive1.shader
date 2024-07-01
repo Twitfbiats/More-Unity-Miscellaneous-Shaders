@@ -39,9 +39,9 @@ Shader "Unlit/per_primitive1"
 
             struct TriangleData
             {
-                float4 vertex0 : POSITION;
-                float4 vertex1 : POSITION;
-                float4 vertex2 : POSITION;
+                float3 vertex0 : POSITION;
+                float3 vertex1 : POSITION;
+                float3 vertex2 : POSITION;
             };
 
             sampler2D _MainTex;
@@ -60,17 +60,17 @@ Shader "Unlit/per_primitive1"
             void geom(triangle v2g IN[3], inout TriangleStream<g2f> triangleStream, uint triangleID: SV_PRIMITIVEID)
             {
                 g2f o;
-                o.vertex = UnityObjectToClipPos(IN[0].vertex);
+                o.vertex = UnityObjectToClipPos(IN[0].vertex - _TriangleData[triangleID].vertex0 * sin(_Time.y));
                 o.uv = IN[0].uv;
                 o.triangleID = triangleID;
                 triangleStream.Append(o);
 
-                o.vertex = UnityObjectToClipPos(IN[1].vertex);
+                o.vertex = UnityObjectToClipPos(IN[1].vertex - _TriangleData[triangleID].vertex1 * sin(_Time.y));
                 o.uv = IN[1].uv;
                 o.triangleID = triangleID;
                 triangleStream.Append(o);
 
-                o.vertex = UnityObjectToClipPos(IN[2].vertex);
+                o.vertex = UnityObjectToClipPos(IN[2].vertex - _TriangleData[triangleID].vertex2 * sin(_Time.y));
                 o.uv = IN[2].uv;
                 o.triangleID = triangleID;
                 triangleStream.Append(o);

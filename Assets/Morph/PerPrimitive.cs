@@ -12,6 +12,7 @@ class PerPrimitive : MonoBehaviour
     {
         material = GetComponent<Renderer>().material;
         meshFilter = GetComponent<MeshFilter>();
+        AddTriangleData();
     }
 
     void AddTriangleData()
@@ -29,7 +30,7 @@ class PerPrimitive : MonoBehaviour
             triangleDatas.Add(triangleData);
         }
 
-        computeBuffer = new ComputeBuffer(triangleDatas.Count, System.Runtime.InteropServices.Marshal.SizeOf(typeof(TriangleData)));
+        computeBuffer = new ComputeBuffer(triangleDatas.Count, 3 * sizeof(float) * 3);
         computeBuffer.SetData(triangleDatas.ToArray());
 
         material.SetBuffer("_TriangleData", computeBuffer);
