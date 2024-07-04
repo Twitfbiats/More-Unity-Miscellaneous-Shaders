@@ -33,13 +33,28 @@ public class RealMorph : MonoBehaviour
         StoreDataForEachTriangle();
     }
 
+    public Matrix4x4 ConstructRotationAndScaleMatrixForMesh2()
+    {
+        Matrix4x4 matrix4X4 = mesh2.transform.localToWorldMatrix;
+        matrix4X4.SetColumn(3, new Vector4(0, 0, 0, 1));
+        Matrix4x4 mesh1RotationMatrix = mesh1.transform.localToWorldMatrix;
+        mesh1RotationMatrix.SetColumn(3, new Vector4(0, 0, 0, 1));
+        mesh1RotationMatrix.SetRow(0, mesh1RotationMatrix.GetRow(0)/mesh1RotationMatrix.GetRow(0).magnitude);
+        mesh1RotationMatrix.SetRow(1, mesh1RotationMatrix.GetRow(1)/mesh1RotationMatrix.GetRow(1).magnitude);
+        mesh1RotationMatrix.SetRow(2, mesh1RotationMatrix.GetRow(2)/mesh1RotationMatrix.GetRow(2).magnitude);
+        mesh1RotationMatrix = mesh1RotationMatrix.inverse;
+        return mesh1RotationMatrix * matrix4X4;
+    }
+
     public void ScaleVertices2(float scale)
     {
         vertices2AfterScalingAndRotating = new Vector3[vertices2.Length];
+        Matrix4x4 matrix4X4 = ConstructRotationAndScaleMatrixForMesh2();
         for (int i = 0; i < vertices2.Length; i++)
         {
-            vertices2AfterScalingAndRotating[i] = Matrix4x4.Scale(new Vector3(scale, scale, scale)).MultiplyPoint3x4(vertices2[i]);
-            vertices2AfterScalingAndRotating[i] = Matrix4x4.Rotate(Quaternion.Euler(rotationFactor)).MultiplyPoint3x4(vertices2AfterScalingAndRotating[i]);
+            // vertices2AfterScalingAndRotating[i] = Matrix4x4.Scale(new Vector3(scale, scale, scale)).MultiplyPoint3x4(vertices2[i]);
+            // vertices2AfterScalingAndRotating[i] = Matrix4x4.Rotate(Quaternion.Euler(rotationFactor)).MultiplyPoint3x4(vertices2AfterScalingAndRotating[i]);
+            vertices2AfterScalingAndRotating[i] = matrix4X4.MultiplyPoint3x4(vertices2[i]);
         }
     }
 
