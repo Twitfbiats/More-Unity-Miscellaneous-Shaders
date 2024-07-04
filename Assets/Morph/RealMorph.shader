@@ -4,6 +4,8 @@ Shader "Unlit/RealMorph"
     {
         _MainTex ("Texture", 2D) = "white" {}
         _MorphTex ("Morph Texture", 2D) = "white" {}
+        _Triangle1TravelDistance ("Triangle Travel Distance", Float) = 0.
+        _TimeScale ("Time Scale", Float) = 1.
     }
     SubShader
     {
@@ -47,12 +49,18 @@ Shader "Unlit/RealMorph"
                 float2 uv0 : TEXCOORD0;
                 float2 uv1 : TEXCOORD1;
                 float2 uv2 : TEXCOORD2;
+                float3 triangle1TravelDirection : POSITION;
+                float3 v0MaxPos : POSITION;
+                float3 v1MaxPos : POSITION;
+                float3 v2MaxPos : POSITION;
             };
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
             sampler2D _MorphTex;
             float4 _MorphTex_ST;
+            float _Triangle1TravelDistance;
+            float _TimeScale;
             StructuredBuffer<PerTriangleData> _PerTriangleData;
 
             v2g vert (appdata v)
@@ -66,20 +74,36 @@ Shader "Unlit/RealMorph"
             [maxvertexcount(3)]
             void geom(triangle v2g IN[3], inout TriangleStream<g2f> triangleStream, uint triangleID: SV_PRIMITIVEID)
             {
+                float fakeTime = _Time.y * _TimeScale % 2;
+                float cond = step(1, fakeTime);
                 g2f o;
-                o.vertex = UnityObjectToClipPos(lerp(IN[0].vertex, _PerTriangleData[triangleID].v0, abs(sin(_Time.y))));
+                o.vertex = UnityObjectToClipPos
+                (
+                    (1 - cond) * (IN[0].vertex + _PerTriangleData[triangleID].triangle1TravelDirection * fakeTime) +
+                    cond* lerp(_PerTriangleData[triangleID].v0MaxPos, _PerTriangleData[triangleID].v0, fakeTime - 1)
+                );
                 o.uv = IN[0].uv;
                 o.morphUV = _PerTriangleData[triangleID].uv0;
                 o.triangleID = triangleID;
                 triangleStream.Append(o);
 
-                o.vertex = UnityObjectToClipPos(lerp(IN[1].vertex, _PerTriangleData[triangleID].v1, abs(sin(_Time.y))));
+                // o.vertex = UnityObjectToClipPos(lerp(IN[1].vertex, _PerTriangleData[triangleID].v1, abs(sin(_Time.y))));
+                o.vertex = UnityObjectToClipPos
+                (
+                    (1 - cond) * (IN[1].vertex + _PerTriangleData[triangleID].triangle1TravelDirection * fakeTime) +
+                    cond * lerp(_PerTriangleData[triangleID].v1MaxPos, _PerTriangleData[triangleID].v1, fakeTime - 1)
+                );
                 o.uv = IN[1].uv;
                 o.morphUV = _PerTriangleData[triangleID].uv1;
                 o.triangleID = triangleID;
                 triangleStream.Append(o);
 
-                o.vertex = UnityObjectToClipPos(lerp(IN[2].vertex, _PerTriangleData[triangleID].v2, abs(sin(_Time.y))));
+                //o.vertex = UnityObjectToClipPos(lerp(IN[2].vertex, _PerTriangleData[triangleID].v2, abs(sin(_Time.y))));
+                o.vertex = UnityObjectToClipPos
+                (
+                    (1 - cond) * (IN[2].vertex + _PerTriangleData[triangleID].triangle1TravelDirection * fakeTime) +
+                    cond * lerp(_PerTriangleData[triangleID].v2MaxPos, _PerTriangleData[triangleID].v2, fakeTime - 1)
+                );
                 o.uv = IN[2].uv;
                 o.morphUV = _PerTriangleData[triangleID].uv2;
                 o.triangleID = triangleID;
@@ -89,7 +113,9 @@ Shader "Unlit/RealMorph"
             fixed4 frag (g2f i) : SV_Target
             {
                 // sample the texture
-                fixed4 col = lerp(tex2D(_MainTex, i.uv), tex2D(_MorphTex, i.morphUV), abs(sin(_Time.y)));
+                float fakeTime = _Time.y * _TimeScale % 2;
+                float cond = 1 - step(1, fakeTime);
+                fixed4 col = cond * tex2D(_MainTex, i.uv) + (1 - cond) * lerp(tex2D(_MainTex, i.uv), tex2D(_MorphTex, i.morphUV), fakeTime - 1);
                 return col;
             }
             ENDCG
