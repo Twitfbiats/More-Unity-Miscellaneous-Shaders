@@ -6,6 +6,7 @@ Shader "Unlit/RealMorph"
         _MorphTex ("Morph Texture", 2D) = "white" {}
         _Triangle1TravelDistance ("Triangle Travel Distance", Float) = 0.
         _TimeScale ("Time Scale", Float) = 1.
+        [HDR] _GlowColor ("Glow Color", Color) = (1,1,1,1)
     }
     SubShader
     {
@@ -61,6 +62,7 @@ Shader "Unlit/RealMorph"
             float4 _MorphTex_ST;
             float _Triangle1TravelDistance;
             float _TimeScale;
+            float4 _GlowColor;
             StructuredBuffer<PerTriangleData> _PerTriangleData;
 
             v2g vert (appdata v)
@@ -115,7 +117,7 @@ Shader "Unlit/RealMorph"
                 // sample the texture
                 float fakeTime = _Time.y * _TimeScale % 2;
                 float cond = 1 - step(1, fakeTime);
-                fixed4 col = cond * tex2D(_MainTex, i.uv) + (1 - cond) * lerp(tex2D(_MainTex, i.uv), tex2D(_MorphTex, i.morphUV), fakeTime - 1);
+                fixed4 col = cond * lerp(tex2D(_MainTex, i.uv), _GlowColor, fakeTime) + (1 - cond) * lerp(_GlowColor, tex2D(_MorphTex, i.morphUV), fakeTime - 1);
                 return col;
             }
             ENDCG

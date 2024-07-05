@@ -122,19 +122,6 @@ public class RealMorph : MonoBehaviour
                     vertices1[triangles1[i + 2]] + tempDirection
                 )
             );
-
-            // perTriangleDatas.Add
-            // (
-            //     new PerTriangleData
-            //     (
-            //         vertices2AfterScalingAndRotating[triangles2[i]],
-            //         vertices2AfterScalingAndRotating[triangles2[i+1]],
-            //         vertices2AfterScalingAndRotating[triangles2[i+2]],
-            //         uv2[triangles2[i]],
-            //         uv2[triangles2[i+1]],
-            //         uv2[triangles2[i+2]]
-            //     )
-            // );
         }
 
         computeBuffer = new ComputeBuffer(perTriangleDatas.Count, 3 * sizeof(float) * 7 + 2 * sizeof(float) * 3);
