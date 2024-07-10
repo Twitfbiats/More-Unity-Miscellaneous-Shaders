@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class MyMeshStructure : MonoBehaviour
 {
@@ -8,7 +10,7 @@ public class MyMeshStructure : MonoBehaviour
     public List<Vertex> vertices;
     public List<Triangle> triangles;
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
         GenerateMeshStructure();
@@ -40,74 +42,63 @@ public class MyMeshStructure : MonoBehaviour
         }
     }
 
-    public void Reduce2Face(int loop)
+    public void VertexMerging(int loop)
     {
         List<Vertex> finalVertices = new List<Vertex>();
         List<Triangle> finalTriangles = new List<Triangle>();
         vertices.ForEach(vertex => finalVertices.Add(vertex));
         triangles.ForEach(triangle => finalTriangles.Add(triangle));
 
-        int expectedFaceCount = finalTriangles.Count - 2 * loop;
-        Debug.Log("Current Face Count: " + finalTriangles.Count + "-----Expected Face Count: " + expectedFaceCount);
-        Vertex tempVertex;
-        while (finalTriangles.Count != expectedFaceCount)
+        Debug.Log("Current Face Count: " + finalTriangles.Count);
+
+        int loopCount = 0;
+        int tempIndex;
+        while (loopCount++ < loop)
         {
-            List<Vertex> unhandledVertices = new List<Vertex>();
-            Vertex vertex = finalVertices[Random.Range(0, finalVertices.Count)];
-            vertex.triangles.ForEach(triangle => 
+            Debug.Log("iteration " + (loopCount - 1));
+            Vertex vcore = finalVertices[Random.Range(0, finalVertices.Count)];
+            List<Triangle> unhandledTriangles = vcore.triangles;
+
+            Triangle tempTriangle = unhandledTriangles[0];
+            Vertex ncore = null;
+            for (int i=0;i<3;i++) if (tempTriangle.vertices[i] != vcore)
             {
-                triangle.vertices.ForEach(v => 
+                ncore = tempTriangle.vertices[i];
+                break;
+            }
+
+            List<Triangle> removedTriangles = new List<Triangle>();
+            for (int i=0;i<unhandledTriangles.Count;i++)
+            {
+                if (unhandledTriangles[i].vertices.Contains(ncore))
                 {
-                    if (v != vertex)
-                    {
-                        if (!unhandledVertices.Contains(v)) unhandledVertices.Add(v);
-                        v.triangles.Remove(triangle);
-                    }
+                    removedTriangles.Add(unhandledTriangles[i]);
+                    if (!finalTriangles.Remove(unhandledTriangles[i])) Debug.Log("Final triangles remove unhandled triangles error");
+                    if (!unhandledTriangles.Remove(unhandledTriangles[i--])) Debug.Log("Unhandled triangle remove unhandled triangle error");
+                }
+            }
+            removedTriangles.ForEach(triangle => 
+            {
+                triangle.vertices.ForEach(vertex => 
+                {
+                    vertex.triangles.Remove(triangle);
                 });
             });
-            finalVertices.Remove(vertex);
-            vertex.triangles.ForEach(triangle => finalTriangles.Remove(triangle));
 
-            List<bool> marks = new List<bool>(unhandledVertices.Count);
-            for (int i=0;i<unhandledVertices.Count;i++) marks.Add(false);
-
-            int expectedFaceRemoved = vertex.triangles.Count - 2;
-            int totalHandleFace = 0;
-
-            while (totalHandleFace != expectedFaceRemoved)
+            unhandledTriangles.ForEach(triangle => 
             {
-                int pickedIndex;
-                
-                do
+                tempIndex = triangle.vertices.IndexOf(vcore);
+                if (tempIndex == -1)
                 {
-                    pickedIndex = Random.Range(0, unhandledVertices.Count);
+                    triangle.vertices.ForEach(vertex => Debug.Log("All vertices: " + vertex.ToString()));
+                    Debug.Log("vcore: " + vcore.ToString());
+                    return;
                 }
-                while (marks[pickedIndex]);
-
-                Vertex pickedOne = unhandledVertices[pickedIndex]; marks[pickedIndex] = true;
-                Triangle newTriangle = new Triangle() {vertices = new List<Vertex>()}; 
-                newTriangle.vertices.Add(vertex);
-
-                for (int i=0;i<pickedOne.triangles.Count;i++)
-                {
-                    pickedOne.triangles[i].vertices.ForEach(v => 
-                    {
-                        if (unhandledVertices.Contains(v) && !marks[unhandledVertices.IndexOf(v)])
-                        {
-                            newTriangle.vertices.Add(v);
-                        }
-                    });
-
-                    if (newTriangle.vertices.Count == 3) break;
-                }
-                newTriangle.vertices.ForEach(v => v.triangles.Add(newTriangle));
-                newTriangle.vertices.ForEach(v => 
-                {
-                    Debug.Log("Check if everything is ok: " + finalVertices.IndexOf(v)); 
-                });
-                finalTriangles.Add(newTriangle);
-                totalHandleFace++;
-            }
+                triangle.vertices[triangle.vertices.IndexOf(vcore)] = ncore;
+                ncore.triangles.Add(triangle);
+            });
+            vcore.triangles = new List<Triangle>();
+            removedTriangles.ForEach(triangle => triangle.vertices.ForEach(vertex => {if (vertex.triangles.Count == 0) finalVertices.Remove(vertex);}));
 
             Debug.Log("Vertex Count: " + vertices.Count + "-----Final Vertex Count: " + finalVertices.Count);
             Debug.Log("Triangle Count: " + triangles.Count + "-----Final Triangle Count: " + finalTriangles.Count);
@@ -130,12 +121,17 @@ public class MyMeshStructure : MonoBehaviour
             finalTrianglesForMesh[i * 3 + 2] = finalVertices.IndexOf(finalTriangles[i].vertices[2]);
         }
 
+        // checking for possible errors
         for (int i=0;i<finalTrianglesForMesh.Length;i++)
         {
-            if (finalTrianglesForMesh[i] < 0 || finalTrianglesForMesh[i] >= finalVertices.Count) Debug.Log("Error: " + finalTrianglesForMesh[i] + "----At: " + i);
+            if (finalTrianglesForMesh[i] < 0 || finalTrianglesForMesh[i] >= finalVertices.Count)
+            {
+                Debug.LogError("Error in finalTrianglesForMesh: " + i + "-----" + finalTrianglesForMesh[i]);
+                return;
+            }
         }
 
-        meshFilter.mesh.Clear();
+        meshFilter.mesh.Clear(false);
         meshFilter.mesh.vertices = finalVerticesForMesh;
         meshFilter.mesh.normals = finalNormalsForMesh;
         meshFilter.mesh.uv = finalUVsForMesh;
@@ -148,14 +144,15 @@ public class MyMeshStructure : MonoBehaviour
         
     }
 
-    public int faceReductionCount = 0;
-    public int prevFaceReductionCount = 0;
+    public int loopCount = 0;
+    public int prevLoopCount = 0;
     private void FixedUpdate() 
     {
-        if (faceReductionCount != prevFaceReductionCount)
+        
+        if (loopCount != prevLoopCount)
         {
-            Reduce2Face(faceReductionCount);
-            prevFaceReductionCount = faceReductionCount;
+            VertexMerging(loopCount);
+            prevLoopCount = loopCount;
         }
     }
 }
@@ -166,6 +163,11 @@ public class Vertex
     public Vector3 normal;
     public Vector2 uv;
     public List<Triangle> triangles = new List<Triangle>();
+
+    public String ToString()
+    {
+        return "Position: " + position.ToString() + "-----Normal: " + normal.ToString() + "-----UV: " + uv.ToString() + "-----Triangle Count: " + triangles.Count;
+    }
 }
 
 public class Triangle
