@@ -6,6 +6,7 @@ public class RealMorph : MonoBehaviour
 {
     public MeshFilter mesh1;
     public MeshFilter mesh2;
+    public MyMeshStructure myMeshStructure;
     public Vector3[] vertices1;
     public Vector3[] vertices2;
     public Vector3[] vertices2AfterScalingAndRotating;
@@ -14,29 +15,44 @@ public class RealMorph : MonoBehaviour
     public int[] triangles2;
     public Vector3[] triangles2MidPoint;
     public bool[] triangles2MidPointHandled;
-    public float triangle1TravelDistance = 3f;
+    public float triangle1TravelDistance = 100f;
     public ComputeBuffer computeBuffer;
-    public Material material;
+    public Material morphMaterial;
+    public Material normalMaterial;
     // Start is called before the first frame update
     void Awake()
     {
-        vertices1 = mesh1.mesh.vertices;
+        myMeshStructure = GetComponent<MyMeshStructure>();
         vertices2 = mesh2.mesh.vertices;
-        triangles1 = mesh1.mesh.triangles;
         triangles2 = mesh2.mesh.triangles;
         triangles2MidPoint = new Vector3[triangles2.Length / 3];
-        triangles2MidPointHandled = new bool[triangles2MidPoint.Length];
-        for (int i = 0; i < triangles2MidPointHandled.Length; i++) triangles2MidPointHandled[i] = false;
         uv2 = mesh2.mesh.uv;
-        // CountTriangleOfBothMesh();
-        material.SetFloat("_Triangle1TravelDistance", triangle1TravelDistance);
     }
 
     void Start()
     {
-        Mesh2PositionCorrecting();
-        CalculateMidPointOfTriangle2();
-        StoreDataForEachTriangle();
+
+    }
+
+    public void StartMorphing()
+    {
+        myMeshStructure.ResetMesh();
+        vertices1 = mesh1.mesh.vertices;
+        triangles1 = mesh1.mesh.triangles;
+        triangles2MidPointHandled = new bool[triangles2MidPoint.Length];
+        for (int i = 0; i < triangles2MidPointHandled.Length; i++) triangles2MidPointHandled[i] = false;
+        if (triangles1.Length > triangles2.Length)
+        {
+            myMeshStructure.VertexMerging(triangles2.Length / 3);
+            vertices1 = mesh1.mesh.vertices;
+            triangles1 = mesh1.mesh.triangles;
+            Mesh2PositionCorrecting();
+            CalculateMidPointOfTriangle2();
+            StoreDataForEachTriangle();
+            morphMaterial.SetFloat("_Triangle1TravelDistance", triangle1TravelDistance);
+            mesh1.GetComponent<MeshRenderer>().material = morphMaterial;
+        }
+        else return;
     }
 
     public void CalculateMidPointOfTriangle2()
@@ -64,14 +80,6 @@ public class RealMorph : MonoBehaviour
         {
             vertices2AfterScalingAndRotating[i] = matrix4X4.MultiplyPoint3x4(vertices2[i]);
         }
-    }
-
-    public void CountTriangleOfBothMesh()
-    {
-        var count1 = triangles1.Length / 3;
-        var count2 = triangles2.Length / 3;
-        Debug.Log("Triangle count of mesh1: " + count1);
-        Debug.Log("Triangle count of mesh2: " + count2);
     }
 
     public List<PerTriangleData> perTriangleDatas = new List<PerTriangleData>();
@@ -127,13 +135,14 @@ public class RealMorph : MonoBehaviour
         computeBuffer = new ComputeBuffer(perTriangleDatas.Count, 3 * sizeof(float) * 7 + 2 * sizeof(float) * 3);
         computeBuffer.SetData(perTriangleDatas.ToArray());
 
-        material.SetBuffer("_PerTriangleData", computeBuffer);
+        morphMaterial.SetBuffer("_PerTriangleData", computeBuffer);
     }
 
+    public bool morph = false;
     // Update is called once per frame
     void Update()
     {
-        
+        if (morph) {morph = false; StartMorphing();}
     }
 }
 

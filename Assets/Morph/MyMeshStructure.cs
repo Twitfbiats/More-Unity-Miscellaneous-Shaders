@@ -7,6 +7,9 @@ using Random = UnityEngine.Random;
 public class MyMeshStructure : MonoBehaviour
 {
     public MeshFilter meshFilter;
+    public SkinnedMeshRenderer skinnedMeshRenderer;
+    public bool meshFilterBool = false;
+    public bool skinnedMeshRendererBool = false;
     public Vector3[] basePositions;
     public Vector3[] baseNormals;
     public Vector2[] baseUVs;
@@ -16,15 +19,46 @@ public class MyMeshStructure : MonoBehaviour
     // Start is called before the first frame update
     void Awake()
     {
-        meshFilter = GetComponent<MeshFilter>();
-        basePositions = new Vector3[meshFilter.mesh.vertices.Length];
-        baseNormals = new Vector3[meshFilter.mesh.normals.Length];
-        baseUVs = new Vector2[meshFilter.mesh.uv.Length];
-        baseTriangles = new int[meshFilter.mesh.triangles.Length];
-        meshFilter.mesh.vertices.CopyTo(basePositions, 0);
-        meshFilter.mesh.normals.CopyTo(baseNormals, 0);
-        meshFilter.mesh.uv.CopyTo(baseUVs, 0);
-        meshFilter.mesh.triangles.CopyTo(baseTriangles, 0);
+        if (TryGetComponent<MeshFilter>(out meshFilter))
+        {
+            meshFilterBool = true;
+            basePositions = meshFilter.mesh.vertices;
+            baseNormals = meshFilter.mesh.normals;
+            baseUVs = meshFilter.mesh.uv;
+            baseTriangles = meshFilter.mesh.triangles;
+        }
+        else if (TryGetComponent<SkinnedMeshRenderer>(out skinnedMeshRenderer))
+        {
+            skinnedMeshRendererBool = true;
+            basePositions = skinnedMeshRenderer.sharedMesh.vertices;
+            baseNormals = skinnedMeshRenderer.sharedMesh.normals;
+            baseUVs = skinnedMeshRenderer.sharedMesh.uv;
+            baseTriangles = skinnedMeshRenderer.sharedMesh.triangles;
+        }
+        else
+        {
+            Debug.LogError("No MeshFilter or SkinnedMeshRenderer found on the GameObject");
+        }
+    }
+
+    public void ResetMesh()
+    {
+        if (meshFilterBool)
+        {
+            meshFilter.mesh.Clear(false);
+            meshFilter.mesh.vertices = basePositions;
+            meshFilter.mesh.normals = baseNormals;
+            meshFilter.mesh.uv = baseUVs;
+            meshFilter.mesh.triangles = baseTriangles;
+        }
+        else if (skinnedMeshRendererBool)
+        {
+            skinnedMeshRenderer.sharedMesh.Clear(false);
+            skinnedMeshRenderer.sharedMesh.vertices = basePositions;
+            skinnedMeshRenderer.sharedMesh.normals = baseNormals;
+            skinnedMeshRenderer.sharedMesh.uv = baseUVs;
+            skinnedMeshRenderer.sharedMesh.triangles = baseTriangles;
+        }
     }
 
     public void GenerateMeshStructure()
@@ -55,61 +89,90 @@ public class MyMeshStructure : MonoBehaviour
         }
     }
 
-    public void VertexMerging(int loop)
+    public void VertexMerging(int faceCount)
     {
         GenerateMeshStructure();
         Debug.Log("Current Face Count: " + triangles.Count);
 
-        int loopCount = 0;
-        while (loopCount++ < loop)
+        Vertex vcore, ncore;
+        List<Triangle> unhandledTriangles, removedTriangles;
+        Triangle tempTriangle;
+        while (true)
         {
-            Debug.Log("iteration " + (loopCount - 1));
-            Vertex vcore = vertices[Random.Range(0, vertices.Count)];
-            List<Triangle> unhandledTriangles = vcore.triangles;
-
-            Triangle tempTriangle = unhandledTriangles[0];
-            Vertex ncore = null;
-            for (int i=0;i<3;i++) if (tempTriangle.vertices[i] != vcore)
+            if (triangles.Count <= faceCount + 1)
             {
-                ncore = tempTriangle.vertices[i];
-                break;
-            }
-
-            List<Triangle> removedTriangles = new List<Triangle>();
-            for (int i=0;i<unhandledTriangles.Count;i++)
-            {
-                if (unhandledTriangles[i].vertices.Contains(ncore))
+                if (triangles.Count == faceCount + 1)
                 {
-                    removedTriangles.Add(unhandledTriangles[i]);
-                    triangles.Remove(unhandledTriangles[i]);
-                    unhandledTriangles.Remove(unhandledTriangles[i--]);
+                    vcore = vertices[Random.Range(0, vertices.Count)];
+                    tempTriangle = vcore.triangles[0];
+
+                    Vertex n1 = null, n2 = null;
+                    for (int i=0;i<3;i++) if (tempTriangle.vertices[i] != vcore)
+                    {
+                        if (n1 == null) n1 = tempTriangle.vertices[i];
+                        else n2 = tempTriangle.vertices[i];
+                    }
+
+                    vcore.position = (n1.position + n2.position) / 2;
+                    vcore.normal = (n1.normal + n2.normal) / 2;
+                    vcore.uv = (n1.uv + n2.uv) / 2;
+                    tempTriangle.vertices.ForEach(vertex => vertex.triangles.Remove(tempTriangle));
+                    triangles.Remove(tempTriangle);
+
+                    tempTriangle.vertices.ForEach(vertex => 
+                    {
+                        if (vertex.triangles.Count == 0) vertices.Remove(vertex);
+                    });
+                } else break;
+            }
+            else
+            {
+                vcore = vertices[Random.Range(0, vertices.Count)];
+                unhandledTriangles = vcore.triangles;
+
+                tempTriangle = unhandledTriangles[0];
+                ncore = null;
+                for (int i=0;i<3;i++) if (tempTriangle.vertices[i] != vcore)
+                {
+                    ncore = tempTriangle.vertices[i];
+                    break;
                 }
-            }
-            removedTriangles.ForEach(triangle => 
-            {
-                triangle.vertices.ForEach(vertex => 
+
+                removedTriangles = new List<Triangle>();
+                for (int i=0;i<unhandledTriangles.Count;i++)
                 {
-                    vertex.triangles.Remove(triangle);
+                    if (unhandledTriangles[i].vertices.Contains(ncore))
+                    {
+                        removedTriangles.Add(unhandledTriangles[i]);
+                        triangles.Remove(unhandledTriangles[i]);
+                        unhandledTriangles.Remove(unhandledTriangles[i--]);
+                    }
+                }
+                removedTriangles.ForEach(triangle => 
+                {
+                    triangle.vertices.ForEach(vertex => 
+                    {
+                        vertex.triangles.Remove(triangle);
+                    });
                 });
-            });
 
-            unhandledTriangles.ForEach(triangle => 
-            {
-                triangle.vertices[triangle.vertices.IndexOf(vcore)] = ncore;
-                ncore.triangles.Add(triangle);
-            });
-            vcore.triangles = new List<Triangle>();
-            
-            removedTriangles.ForEach(triangle => 
-                triangle.vertices.ForEach(vertex => 
+                unhandledTriangles.ForEach(triangle => 
                 {
-                    if (vertex.triangles.Count == 0) vertices.Remove(vertex);
-                })
-            );
-
-            Debug.Log("Vertex Count: " + vertices.Count + "-----Final Vertex Count: " + vertices.Count);
-            Debug.Log("Triangle Count: " + triangles.Count + "-----Final Triangle Count: " + triangles.Count);
+                    triangle.vertices[triangle.vertices.IndexOf(vcore)] = ncore;
+                    ncore.triangles.Add(triangle);
+                });
+                vcore.triangles = new List<Triangle>();
+                
+                removedTriangles.ForEach(triangle => 
+                    triangle.vertices.ForEach(vertex => 
+                    {
+                        if (vertex.triangles.Count == 0) vertices.Remove(vertex);
+                    })
+                );
+            }
         }
+        Debug.Log("Vertex Count: " + vertices.Count + "-----Final Vertex Count: " + vertices.Count);
+        Debug.Log("Triangle Count: " + triangles.Count + "-----Final Triangle Count: " + triangles.Count);
 
         Vector3[] finalVerticesForMesh = new Vector3[vertices.Count];
         Vector3[] finalNormalsForMesh = new Vector3[vertices.Count];
@@ -128,11 +191,22 @@ public class MyMeshStructure : MonoBehaviour
             finalTrianglesForMesh[i * 3 + 2] = vertices.IndexOf(triangles[i].vertices[2]);
         }
 
-        meshFilter.mesh.Clear(false);
-        meshFilter.mesh.vertices = finalVerticesForMesh;
-        meshFilter.mesh.normals = finalNormalsForMesh;
-        meshFilter.mesh.uv = finalUVsForMesh;
-        meshFilter.mesh.triangles = finalTrianglesForMesh;
+        if (meshFilterBool)
+        {
+            meshFilter.mesh.Clear(false);
+            meshFilter.mesh.vertices = finalVerticesForMesh;
+            meshFilter.mesh.normals = finalNormalsForMesh;
+            meshFilter.mesh.uv = finalUVsForMesh;
+            meshFilter.mesh.triangles = finalTrianglesForMesh;
+        }
+        else if (skinnedMeshRendererBool)
+        {
+            skinnedMeshRenderer.sharedMesh.Clear(false);
+            skinnedMeshRenderer.sharedMesh.vertices = finalVerticesForMesh;
+            skinnedMeshRenderer.sharedMesh.normals = finalNormalsForMesh;
+            skinnedMeshRenderer.sharedMesh.uv = finalUVsForMesh;
+            skinnedMeshRenderer.sharedMesh.triangles = finalTrianglesForMesh;
+        }
     }
 
     // Update is called once per frame
@@ -141,17 +215,17 @@ public class MyMeshStructure : MonoBehaviour
         
     }
 
-    public int loopCount = 0;
-    public int prevLoopCount = 0;
-    private void FixedUpdate() 
-    {
+    // public int expectedFaceCount = 0;
+    // public int prevExpectedFaceCount = 0;
+    // private void FixedUpdate() 
+    // {
         
-        if (loopCount != prevLoopCount)
-        {
-            VertexMerging(loopCount);
-            prevLoopCount = loopCount;
-        }
-    }
+    //     if (expectedFaceCount != prevExpectedFaceCount)
+    //     {
+    //         VertexMerging(expectedFaceCount);
+    //         prevExpectedFaceCount = expectedFaceCount;
+    //     }
+    // }
 }
 
 public class Vertex
