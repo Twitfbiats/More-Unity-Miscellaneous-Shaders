@@ -6,20 +6,36 @@ using Random = UnityEngine.Random;
 
 public class MyMeshStructure : MonoBehaviour
 {
-    public MeshFilter meshFilter;
-    public SkinnedMeshRenderer skinnedMeshRenderer;
-    public bool meshFilterBool = false;
-    public bool skinnedMeshRendererBool = false;
-    public Vector3[] basePositions;
-    public Vector3[] baseNormals;
-    public Vector2[] baseUVs;
-    public int[] baseTriangles;
-    public Vector3[] decimatedPositions;
-    public Vector3[] decimatedNormals;
-    public Vector2[] decimatedUVs;
-    public int[] decimatedTriangles;
-    public List<Vertex> vertices;
-    public List<Triangle> triangles;
+    private MeshFilter meshFilter;
+    private SkinnedMeshRenderer skinnedMeshRenderer;
+    private bool meshFilterBool = false;
+    private bool skinnedMeshRendererBool = false;
+    private Vector3[] basePositions;
+    private Vector3[] baseNormals;
+    private Vector2[] baseUVs;
+    private int[] baseTriangles;
+    private Vector3[] decimatedPositions;
+    private Vector3[] decimatedNormals;
+    private Vector2[] decimatedUVs;
+    private int[] decimatedTriangles;
+    private List<Vertex> vertices;
+    private List<Triangle> triangles;
+
+    public MeshFilter MeshFilter { get => meshFilter; set => meshFilter = value; }
+    public SkinnedMeshRenderer SkinnedMeshRenderer { get => skinnedMeshRenderer; set => skinnedMeshRenderer = value; }
+    public bool MeshFilterBool { get => meshFilterBool; set => meshFilterBool = value; }
+    public bool SkinnedMeshRendererBool { get => skinnedMeshRendererBool; set => skinnedMeshRendererBool = value; }
+    public Vector3[] BasePositions { get => basePositions; set => basePositions = value; }
+    public Vector3[] BaseNormals { get => baseNormals; set => baseNormals = value; }
+    public Vector2[] BaseUVs { get => baseUVs; set => baseUVs = value; }
+    public int[] BaseTriangles { get => baseTriangles; set => baseTriangles = value; }
+    public Vector3[] DecimatedPositions { get => decimatedPositions; set => decimatedPositions = value; }
+    public Vector3[] DecimatedNormals { get => decimatedNormals; set => decimatedNormals = value; }
+    public Vector2[] DecimatedUVs { get => decimatedUVs; set => decimatedUVs = value; }
+    public int[] DecimatedTriangles { get => decimatedTriangles; set => decimatedTriangles = value; }
+    public List<Vertex> Vertices { get => vertices; set => vertices = value; }
+    public List<Triangle> Triangles { get => triangles; set => triangles = value; }
+
     // Start is called before the first frame update
     void Awake()
     {

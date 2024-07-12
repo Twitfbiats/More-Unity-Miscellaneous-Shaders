@@ -20,10 +20,12 @@ public class RealMorph : MonoBehaviour
     public Material morphMaterial;
     public Material normalMaterial;
     public GameObject baseCoordinateObject;
+    public MeshRenderer meshRenderer;
     // Start is called before the first frame update
     void Awake()
     {
         myMeshStructure = GetComponent<MyMeshStructure>();
+        meshRenderer = GetComponent<MeshRenderer>();
         vertices2 = mesh2.mesh.vertices;
         triangles2 = mesh2.mesh.triangles;
         triangles2MidPoint = new Vector3[triangles2.Length / 3];
@@ -46,8 +48,8 @@ public class RealMorph : MonoBehaviour
         if (triangles1.Length > triangles2.Length)
         {
             myMeshStructure.VertexMerging(triangles2.Length / 3);
-            vertices1 = myMeshStructure.decimatedPositions;
-            triangles1 = myMeshStructure.decimatedTriangles;
+            vertices1 = myMeshStructure.DecimatedPositions;
+            triangles1 = myMeshStructure.DecimatedTriangles;
             Mesh2PositionCorrecting();
             CalculateMidPointOfTriangle2();
             StoreDataForEachTriangle();
@@ -57,19 +59,20 @@ public class RealMorph : MonoBehaviour
 
     public void StartMorphing()
     {
-        // myMeshStructure.ResetMesh();
-        // vertices1 = mesh1.mesh.vertices;
-        // triangles1 = mesh1.mesh.triangles;
-        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
         if (triangles1.Length == triangles2.Length)
         {
             myMeshStructure.SwapMesh();
-            morphMaterial.SetBuffer("_PerTriangleData", computeBuffer);
             morphMaterial.SetFloat("_Triangle1TravelDistance", triangle1TravelDistance);
             morphMaterial.SetFloat("_TimeOffset", Time.timeSinceLevelLoad);
             meshRenderer.material = morphMaterial;
         }
         else return;
+    }
+
+    public void ResetMorphing()
+    {
+        myMeshStructure.ResetMesh();
+        meshRenderer.material = normalMaterial;
     }
 
     public void CalculateMidPointOfTriangle2()
@@ -100,6 +103,15 @@ public class RealMorph : MonoBehaviour
     }
 
     public List<PerTriangleData> perTriangleDatas = new List<PerTriangleData>();
+    public Vector3[] Vertices1 { get => vertices1; set => vertices1 = value; }
+    public Vector3[] Vertices2 { get => vertices2; set => vertices2 = value; }
+    public Vector3[] Vertices2AfterScalingAndRotating { get => vertices2AfterScalingAndRotating; set => vertices2AfterScalingAndRotating = value; }
+    public Vector2[] Uv2 { get => uv2; set => uv2 = value; }
+    public int[] Triangles1 { get => triangles1; set => triangles1 = value; }
+    public int[] Triangles2 { get => triangles2; set => triangles2 = value; }
+    public Vector3[] Triangles2MidPoint { get => triangles2MidPoint; set => triangles2MidPoint = value; }
+    public bool[] Triangles2MidPointHandled { get => triangles2MidPointHandled; set => triangles2MidPointHandled = value; }
+
     public void StoreDataForEachTriangle()
     {
         Vector3 tempNormal, tempMidPointPosition, tempDirection;
@@ -152,14 +164,7 @@ public class RealMorph : MonoBehaviour
         computeBuffer = new ComputeBuffer(perTriangleDatas.Count, 3 * sizeof(float) * 7 + 2 * sizeof(float) * 3);
         computeBuffer.SetData(perTriangleDatas.ToArray());
 
-        // morphMaterial.SetBuffer("_PerTriangleData", computeBuffer);
-    }
-
-    public bool morph = false;
-    // Update is called once per frame
-    void Update()
-    {
-        if (morph) {morph = false; StartMorphing();}
+        morphMaterial.SetBuffer("_PerTriangleData", computeBuffer);
     }
 }
 

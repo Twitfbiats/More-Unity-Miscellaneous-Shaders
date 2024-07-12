@@ -34,6 +34,13 @@ Customizable fire shader
 
 ![](gif/fire.webp)
 
+## Update 2024/12/07：Fire
+#### Description:
+
+3D Mesh Morphing Shader (Need mesh decimation or refinement first)
+
+![](gif/morph.gif)
+
 ## Update 2017/11/23: Update a demo of Stanford rabbit generating fur
 #### Description:
 Using the Geometry Shader to generate fur on GPU.
