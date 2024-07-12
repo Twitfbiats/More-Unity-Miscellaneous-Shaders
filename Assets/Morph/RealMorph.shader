@@ -6,6 +6,7 @@ Shader "Unlit/RealMorph"
         _MorphTex ("Morph Texture", 2D) = "white" {}
         _Triangle1TravelDistance ("Triangle Travel Distance", Float) = 0.
         _TimeScale ("Time Scale", Float) = 1.
+        _TimeOffset ("Time Offset", Float) = 0.
         [HDR] _GlowColor ("Glow Color", Color) = (1,1,1,1)
     }
     SubShader
@@ -62,6 +63,7 @@ Shader "Unlit/RealMorph"
             float4 _MorphTex_ST;
             float _Triangle1TravelDistance;
             float _TimeScale;
+            float _TimeOffset;
             float4 _GlowColor;
             StructuredBuffer<PerTriangleData> _PerTriangleData;
 
@@ -76,7 +78,7 @@ Shader "Unlit/RealMorph"
             [maxvertexcount(3)]
             void geom(triangle v2g IN[3], inout TriangleStream<g2f> triangleStream, uint triangleID: SV_PRIMITIVEID)
             {
-                float fakeTime = _Time.y * _TimeScale % 2;
+                float fakeTime = (_Time.y - _TimeOffset) * _TimeScale % 2;
                 float cond = step(1, fakeTime);
                 g2f o;
                 o.vertex = UnityObjectToClipPos
@@ -115,7 +117,7 @@ Shader "Unlit/RealMorph"
             fixed4 frag (g2f i) : SV_Target
             {
                 // sample the texture
-                float fakeTime = _Time.y * _TimeScale % 2;
+                float fakeTime = (_Time.y - _TimeOffset) * _TimeScale % 2;
                 float cond = 1 - step(1, fakeTime);
                 fixed4 col = cond * lerp(tex2D(_MainTex, i.uv), _GlowColor, fakeTime) + (1 - cond) * lerp(_GlowColor, tex2D(_MorphTex, i.morphUV), fakeTime - 1);
                 return col;

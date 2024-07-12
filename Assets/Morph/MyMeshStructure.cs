@@ -14,6 +14,10 @@ public class MyMeshStructure : MonoBehaviour
     public Vector3[] baseNormals;
     public Vector2[] baseUVs;
     public int[] baseTriangles;
+    public Vector3[] decimatedPositions;
+    public Vector3[] decimatedNormals;
+    public Vector2[] decimatedUVs;
+    public int[] decimatedTriangles;
     public List<Vertex> vertices;
     public List<Triangle> triangles;
     // Start is called before the first frame update
@@ -193,11 +197,10 @@ public class MyMeshStructure : MonoBehaviour
 
         if (meshFilterBool)
         {
-            meshFilter.mesh.Clear(false);
-            meshFilter.mesh.vertices = finalVerticesForMesh;
-            meshFilter.mesh.normals = finalNormalsForMesh;
-            meshFilter.mesh.uv = finalUVsForMesh;
-            meshFilter.mesh.triangles = finalTrianglesForMesh;
+            decimatedPositions = finalVerticesForMesh;
+            decimatedNormals = finalNormalsForMesh;
+            decimatedUVs = finalUVsForMesh;
+            decimatedTriangles = finalTrianglesForMesh;
         }
         else if (skinnedMeshRendererBool)
         {
@@ -206,6 +209,22 @@ public class MyMeshStructure : MonoBehaviour
             skinnedMeshRenderer.sharedMesh.normals = finalNormalsForMesh;
             skinnedMeshRenderer.sharedMesh.uv = finalUVsForMesh;
             skinnedMeshRenderer.sharedMesh.triangles = finalTrianglesForMesh;
+        }
+    }
+
+    public void SwapMesh()
+    {
+        if (meshFilterBool)
+        {
+            meshFilter.mesh.Clear(false);
+            meshFilter.mesh.vertices = decimatedPositions;
+            meshFilter.mesh.normals = decimatedNormals;
+            meshFilter.mesh.uv = decimatedUVs;
+            meshFilter.mesh.triangles = decimatedTriangles;
+        }
+        else if (skinnedMeshRendererBool)
+        {
+            
         }
     }
 
