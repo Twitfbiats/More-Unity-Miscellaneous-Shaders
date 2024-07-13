@@ -6,6 +6,7 @@ public class RealMorph : MonoBehaviour
 {
     public MeshFilter mesh1;
     public MeshFilter mesh2;
+    public MeshRenderer meshRenderer2;
     public MyMeshStructure myMeshStructure;
     private Vector3[] vertices1;
     private Vector3[] vertices2;
@@ -24,44 +25,64 @@ public class RealMorph : MonoBehaviour
     // Start is called before the first frame update
     void Awake()
     {
+        mesh1 = GetComponent<MeshFilter>();
         myMeshStructure = GetComponent<MyMeshStructure>();
         meshRenderer = GetComponent<MeshRenderer>();
-        vertices2 = mesh2.mesh.vertices;
-        triangles2 = mesh2.mesh.triangles;
-        triangles2MidPoint = new Vector3[triangles2.Length / 3];
-        uv2 = mesh2.mesh.uv;
-        
     }
 
     void Start()
     {
-        PrepareMorphing();
+        
     }
 
-    public void PrepareMorphing()
+    public int PrepareMorphing(GameObject gameObject)
     {
+        mesh2 = gameObject.GetComponent<MeshFilter>();
+        meshRenderer2 = gameObject.GetComponent<MeshRenderer>();
+        vertices2 = mesh2.mesh.vertices;
+        triangles2 = mesh2.mesh.triangles;
+        triangles2MidPoint = new Vector3[triangles2.Length / 3];
+        uv2 = mesh2.mesh.uv;
         triangles2MidPointHandled = new bool[triangles2MidPoint.Length];
         for (int i = 0; i < triangles2MidPointHandled.Length; i++) triangles2MidPointHandled[i] = false;
-        MeshFilter meshFilter = GetComponent<MeshFilter>();
-        vertices1 = meshFilter.mesh.vertices;
-        triangles1 = meshFilter.mesh.triangles;
+        vertices1 = mesh1.mesh.vertices;
+        triangles1 = mesh1.mesh.triangles;
+        morphMaterial.SetTexture("_MorphTex", meshRenderer.material.mainTexture);
+        int equality = 0;
         if (triangles1.Length > triangles2.Length)
         {
-            myMeshStructure.VertexMerging(triangles2.Length / 3);
+            myMeshStructure.MeshDecimatingVertexMerging(triangles2.Length / 3);
             vertices1 = myMeshStructure.DecimatedPositions;
             triangles1 = myMeshStructure.DecimatedTriangles;
-            Mesh2PositionCorrecting();
-            CalculateMidPointOfTriangle2();
-            StoreDataForEachTriangle();
+            equality = 1;
         }
-        else return;
+        else if (triangles1.Length < triangles2.Length)
+        {
+            myMeshStructure.MeshRefiningTriangleSplitting(triangles2.Length / 3);
+            vertices1 = myMeshStructure.RefinedPositions;
+            triangles1 = myMeshStructure.RefinedTriangles;
+            equality = -1;
+        }
+        
+        Mesh2PositionCorrecting();
+        CalculateMidPointOfTriangle2();
+        StoreDataForEachTriangle();
+        return equality;
     }
 
-    public void StartMorphing()
+    public GameObject gameObjectCheckingForPrepareMorphing;
+    public void StartMorphing(GameObject gameObject)
     {
+        int equality = 0;
+        if (gameObject != gameObjectCheckingForPrepareMorphing)
+        {
+            equality = PrepareMorphing(gameObject);
+            gameObjectCheckingForPrepareMorphing = gameObject;
+        }
+
         if (triangles1.Length == triangles2.Length)
         {
-            myMeshStructure.SwapMesh();
+            myMeshStructure.SwapMesh(equality);
             morphMaterial.SetFloat("_Triangle1TravelDistance", triangle1TravelDistance);
             morphMaterial.SetFloat("_TimeOffset", Time.timeSinceLevelLoad);
             meshRenderer.material = morphMaterial;

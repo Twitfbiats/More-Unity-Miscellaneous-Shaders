@@ -14,6 +14,7 @@ class TestScript : MonoBehaviour
     private Rigidbody crossBow2Rigidbody;
     private Vector3 crossBow1InitialPosition;
     private Vector3 crossBow2InitialPosition;
+    public GameObject morphToGameObject;
 
     private void Awake() 
     {
@@ -29,7 +30,7 @@ class TestScript : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.M))
         {
-            realMorph.StartMorphing();
+            realMorph.StartMorphing(morphToGameObject);
             StartCoroutine(TrickSwapMesh());
             crossBow1Rigidbody.useGravity = true;
             crossBow2Rigidbody.useGravity = true;
@@ -45,7 +46,6 @@ class TestScript : MonoBehaviour
         }
     }
 
-    public Material trickSwapMaterial;
     IEnumerator TrickSwapMesh()
     {
         yield return new WaitForSeconds(2);
@@ -55,6 +55,6 @@ class TestScript : MonoBehaviour
         myMeshStructure.MeshFilter.mesh.uv = realMorph.Uv2;
         myMeshStructure.MeshFilter.mesh.triangles = realMorph.Triangles2;
         myMeshStructure.MeshFilter.mesh.RecalculateNormals();
-        realMorph.meshRenderer.material = trickSwapMaterial;
+        realMorph.meshRenderer.material = realMorph.meshRenderer2.material;
     }
 }
